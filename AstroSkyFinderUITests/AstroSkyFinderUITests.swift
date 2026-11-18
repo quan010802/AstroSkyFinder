@@ -10,29 +10,19 @@ final class AstroSkyFinderUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        // Allow simulator background sky + AR render to populate
+        // 1. Clean full-screen Stellarium AR + Virtual Metal Night Sky
         sleep(2)
-        attachScreenshot(name: "01_Initial_AR_AllLayers")
+        attachScreenshot(name: "01_FullScreen_AR_Viewfinder")
 
-        // Verify independent AR toggle buttons exist & toggle cleanly
-        let starsBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Sao'")).firstMatch
-        if starsBtn.waitForExistence(timeout: 3) {
-            starsBtn.tap()
-            starsBtn.tap()
-        }
-
-        // Run Auto Star Focus Sweep on Virtual Night Sky!
-        let focusBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Auto Nét Sao'")).firstMatch
+        // 2. Run Auto Star Focus Sweep & wait for lock (~0.935)
+        let focusBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Auto Nét'")).firstMatch
         if focusBtn.waitForExistence(timeout: 3) {
             focusBtn.tap()
-            // Wait for 0.78 -> 1.00 sweep to find sharpest 0.935 peak
-            let lockedPred = NSPredicate(format: "label CONTAINS 'Nét 0.'")
-            let lockedBtn = app.buttons.matching(lockedPred).firstMatch
-            _ = lockedBtn.waitForExistence(timeout: 8)
-            attachScreenshot(name: "02_After_AutoStarFocus")
+            let lockedBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Nét 0.'")).firstMatch
+            _ = lockedBtn.waitForExistence(timeout: 9)
         }
 
-        // Open Target Finder Sheet and lock a target
+        // 3. Pick Orion Target so AR Guidance Arrow displays clearly in full-screen sky!
         let targetBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Mục tiêu'")).firstMatch
         if targetBtn.waitForExistence(timeout: 3) {
             targetBtn.tap()
@@ -45,10 +35,19 @@ final class AstroSkyFinderUITests: XCTestCase {
                 if closeBtn.exists { closeBtn.tap() }
             }
             sleep(1)
-            attachScreenshot(name: "03_TargetGuidance_AR")
+            attachScreenshot(name: "02_AutoFocus_And_TargetArrow")
         }
 
-        // Switch to Night Vision Red UI
+        // 4. Expand Pro Controls Drawer (MF / ISO / Exposure / RAW Count)
+        let slidersBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Thông số'")).firstMatch
+        if slidersBtn.waitForExistence(timeout: 3) {
+            slidersBtn.tap()
+            sleep(1)
+            attachScreenshot(name: "03_Pro_Sliders_Expanded")
+            slidersBtn.tap()
+        }
+
+        // 5. Switch to Night Vision Red UI
         let redBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Đêm đỏ'")).firstMatch
         if redBtn.waitForExistence(timeout: 3) {
             redBtn.tap()

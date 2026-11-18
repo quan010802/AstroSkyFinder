@@ -280,9 +280,11 @@ final class MetalStackProcessor: NSObject, MTKViewDelegate {
         guard !vals.isEmpty else { return (0, 0) }
         vals.sort()
         let med = Double(vals[vals.count / 2])
-        let p999 = Double(vals[Int(Double(vals.count - 1) * 0.999)])
-        let contrastPeak = max(0.0, p999 - med)
-        let sharpness = sqrt(gradSum / Double(vals.count)) + contrastPeak * 0.35
+        let p9995 = Double(vals[Int(Double(vals.count - 1) * 0.9995)])
+        let maxV = Double(vals[vals.count - 1])
+        let contrastPeak = max(0.0, (0.65 * maxV + 0.35 * p9995) - med)
+        // Pinpoint stars maximize peak energy concentration above sky floor (avoids wide-halo bias!)
+        let sharpness = contrastPeak * 0.85 + sqrt(gradSum / Double(vals.count)) * 0.35
         return (sharpness, med)
     }
 

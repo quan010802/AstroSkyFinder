@@ -86,7 +86,7 @@ struct ARSkyOverlayView: View {
                             altOffsetDeg: sensor.altCalibrationOffsetDeg
                         )
                         TargetGuidanceBadge(target: target, guidance: guidance, nightRed: nightRed)
-                            .position(x: geo.size.width * 0.5, y: 122)
+                            .position(x: geo.size.width * 0.5, y: 205)
                             .allowsHitTesting(false)
                     }
                 }

@@ -10,7 +10,7 @@ import UniformTypeIdentifiers
 enum CapturePipelineMode: String, CaseIterable, Identifiable {
     case rawSequence = "RAW DNG"
     case metalStack = "Gộp Metal"
-    case both = "Cả 2 (RAW+Gộp)"
+    case both = "Cả 2"
     var id: String { rawValue }
 }
 

@@ -15,6 +15,7 @@ struct MainCameraView: View {
     // Visual & assistant toggles
     @State private var nightVisionUI = false
     @State private var loupeZoom4x = false
+    @State private var showSlidersDrawer = false
     @State private var dimScreenSaver = false
     @State private var activeTarget: AstroTarget? = nil
 
@@ -33,7 +34,7 @@ struct MainCameraView: View {
 
     var body: some View {
         ZStack {
-            // 1. Live GPU Metal camera preview (boosted 1x..12x on screen only, RAW untouched!)
+            // 1. Live GPU Metal camera preview (boosted 1x..14x on screen only, RAW untouched!)
             MetalPreviewRepresentable(
                 processor: camera.metalProcessor,
                 boostGain: camera.autoBrightnessBoost,
@@ -62,8 +63,9 @@ struct MainCameraView: View {
                 Spacer()
                 bottomCameraControlDeck
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .padding(.top, 6)
+            .padding(.bottom, 8)
 
             // 4. Ultra-dim Screen Saver Lock while shooting 60–300 frames on tripod
             if dimScreenSaver {
@@ -95,55 +97,66 @@ struct MainCameraView: View {
     // MARK: - Top HUD: Lens/Telemetry + Individual AR Layer Buttons
     private var topStatusAndARToggleDeck: some View {
         VStack(spacing: 6) {
-            // Telemetry + Lens + Target + Calibrate Row
-            HStack(spacing: 6) {
+            // Compact Single-Line Telemetry + Lens + Target + Calibrate Row
+            HStack(spacing: 5) {
                 if let lens = camera.currentLens {
                     Text(String(format: "f/%.1f · %.0fmm", lens.aperture, lens.eqFocalMm))
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .padding(.horizontal, 8)
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 7)
                         .padding(.vertical, 4)
-                        .background(Color.black.opacity(0.65))
+                        .background(Color.black.opacity(0.62))
                         .foregroundColor(themeAccent)
                         .clipShape(Capsule())
                 }
 
-                // Multi-Lens selector buttons
                 ForEach(Array(camera.availableLenses.enumerated()), id: \.element.id) { idx, lens in
                     Button(lens.label) {
                         camera.switchLens(to: idx)
                     }
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
+                    .lineLimit(1)
+                    .fixedSize()
                     .padding(.horizontal, 7)
                     .padding(.vertical, 4)
-                    .background(camera.selectedLensIndex == idx ? themeAccent : Color.black.opacity(0.6))
+                    .background(camera.selectedLensIndex == idx ? themeAccent : Color.black.opacity(0.58))
                     .foregroundColor(camera.selectedLensIndex == idx ? .black : .white)
                     .clipShape(Capsule())
                 }
 
-                Spacer()
+                Spacer(minLength: 2)
 
                 Button {
                     showTargetPicker = true
                 } label: {
-                    Label(activeTarget == nil ? "Mục tiêu" : "Đổi", systemImage: "scope")
-                        .font(.system(size: 11, weight: .semibold))
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 4)
-                        .background(activeTarget != nil ? themeAccent.opacity(0.85) : Color.black.opacity(0.65))
-                        .foregroundColor(activeTarget != nil ? .black : themeAccent)
-                        .clipShape(Capsule())
+                    HStack(spacing: 3) {
+                        Image(systemName: "scope").font(.system(size: 10))
+                        Text(activeTarget == nil ? "Mục tiêu" : "Đổi").lineLimit(1)
+                    }
+                    .font(.system(size: 10, weight: .semibold))
+                    .fixedSize()
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(activeTarget != nil ? themeAccent.opacity(0.9) : Color.black.opacity(0.62))
+                    .foregroundColor(activeTarget != nil ? .black : themeAccent)
+                    .clipShape(Capsule())
                 }
 
                 Button {
                     showCalibrationSheet = true
                 } label: {
-                    Label("Cân AR", systemImage: "gyroscope")
-                        .font(.system(size: 11, weight: .semibold))
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 4)
-                        .background(Color.black.opacity(0.65))
-                        .foregroundColor(themeAccent)
-                        .clipShape(Capsule())
+                    HStack(spacing: 3) {
+                        Image(systemName: "gyroscope").font(.system(size: 10))
+                        Text("Cân AR").lineLimit(1)
+                    }
+                    .font(.system(size: 10, weight: .semibold))
+                    .fixedSize()
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.black.opacity(0.62))
+                    .foregroundColor(themeAccent)
+                    .clipShape(Capsule())
                 }
             }
 
@@ -154,7 +167,7 @@ struct MainCameraView: View {
                     LayerToggleButton(title: "Chòm sao", icon: "sparkles", isOn: $showConstellations, accent: themeAccent)
                     LayerToggleButton(title: "Ngân Hà", icon: "hurricane", isOn: $showMilkyWay, accent: themeAccent)
                     LayerToggleButton(title: "Deep-Sky", icon: "circle.dotted", isOn: $showDeepSky, accent: themeAccent)
-                    LayerToggleButton(title: "La bàn/Lưới", icon: "safari", isOn: $showCompassGrid, accent: themeAccent)
+                    LayerToggleButton(title: "La bàn", icon: "safari", isOn: $showCompassGrid, accent: themeAccent)
 
                     Button {
                         let anyOff = !(showStars && showConstellations && showMilkyWay && showDeepSky && showCompassGrid)
@@ -166,6 +179,8 @@ struct MainCameraView: View {
                     } label: {
                         Text((showStars && showConstellations && showMilkyWay && showDeepSky && showCompassGrid) ? "Ẩn AR" : "Hiện Hết")
                             .font(.system(size: 11, weight: .bold))
+                            .lineLimit(1)
+                            .fixedSize()
                             .padding(.horizontal, 9)
                             .padding(.vertical, 5)
                             .background(Color.white.opacity(0.16))
@@ -178,42 +193,45 @@ struct MainCameraView: View {
                 }
             }
 
-            // Status / Sharpness Live Pill
-            HStack(spacing: 8) {
+            // Compact Status & Live Sharpness Pill
+            HStack(spacing: 6) {
                 Circle()
                     .fill(camera.isFocusLocked ? Color.green : Color.orange)
-                    .frame(width: 7, height: 7)
+                    .frame(width: 6, height: 6)
                 Text(camera.statusMessage)
                     .lineLimit(1)
                 Spacer()
-                Text(String(format: "Nét: %.1f · Trời: %.0f", camera.liveSharpnessScore, camera.liveSkyADU))
+                Text(String(format: "Nét %.1f · Sky %.0f", camera.liveSharpnessScore, camera.liveSkyADU))
                     .font(.system(size: 10, design: .monospaced))
+                    .fixedSize()
             }
-            .font(.system(size: 11, weight: .medium))
+            .font(.system(size: 10, weight: .medium))
             .foregroundColor(nightVisionUI ? .red : .white.opacity(0.92))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color.black.opacity(0.62))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(Color.black.opacity(0.55))
+            .clipShape(Capsule())
         }
     }
 
-    // MARK: - Bottom Control Deck: Auto Focus + ISO + Exposure + Stack + Shutter
+    // MARK: - Bottom Control Deck: Compact Viewfinder-First + Expandable Pro Sliders
     private var bottomCameraControlDeck: some View {
-        VStack(spacing: 8) {
-            // Quick Assist Bar: Auto Star Focus, Auto Exposure, Live Preview Boost, Power Dim
-            HStack(spacing: 6) {
+        VStack(spacing: 7) {
+            // Quick Assist Row: Auto Focus, Auto ISO, Preview Boost, Sliders Toggle, Dim Mode
+            HStack(spacing: 5) {
                 Button {
                     camera.startAutoStarFocus()
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 3) {
                         Image(systemName: camera.isAutoFocusing ? "hourglass" : "scope")
-                        Text(camera.isAutoFocusing ? "Đang quét..." : (camera.isFocusLocked ? String(format: "Nét %.3f", camera.lensPosition) : "Auto Nét Sao"))
+                        Text(camera.isAutoFocusing ? "Đang quét..." : (camera.isFocusLocked ? String(format: "Nét %.3f", camera.lensPosition) : "Auto Nét"))
+                            .lineLimit(1)
                     }
                     .font(.system(size: 11, weight: .bold))
+                    .fixedSize()
                     .padding(.horizontal, 9)
                     .padding(.vertical, 6)
-                    .background(camera.isFocusLocked ? Color.green.opacity(0.85) : themeAccent)
+                    .background(camera.isFocusLocked ? Color.green.opacity(0.9) : themeAccent)
                     .foregroundColor(.black)
                     .clipShape(Capsule())
                 }
@@ -222,14 +240,18 @@ struct MainCameraView: View {
                 Button {
                     camera.applyAutoAstroRecommendation(target: activeTarget)
                 } label: {
-                    Label("Auto ISO", systemImage: "wand.and.stars")
-                        .font(.system(size: 11, weight: .bold))
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 6)
-                        .background(Color.black.opacity(0.72))
-                        .foregroundColor(themeAccent)
-                        .overlay(Capsule().stroke(themeAccent.opacity(0.5), lineWidth: 1))
-                        .clipShape(Capsule())
+                    HStack(spacing: 3) {
+                        Image(systemName: "wand.and.stars")
+                        Text("Auto ISO").lineLimit(1)
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .fixedSize()
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.68))
+                    .foregroundColor(themeAccent)
+                    .overlay(Capsule().stroke(themeAccent.opacity(0.45), lineWidth: 1))
+                    .clipShape(Capsule())
                 }
                 .disabled(camera.isCapturing)
 
@@ -241,118 +263,72 @@ struct MainCameraView: View {
                         camera.autoBrightnessBoost = 4.0
                     }
                 } label: {
-                    Text(String(format: "Sáng %.0fx", camera.autoBrightnessBoost))
+                    Text(String(format: "%.0fx", camera.autoBrightnessBoost))
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .fixedSize()
                         .padding(.horizontal, 8)
                         .padding(.vertical, 6)
-                        .background(Color.black.opacity(0.72))
+                        .background(Color.black.opacity(0.68))
                         .foregroundColor(.yellow)
                         .clipShape(Capsule())
                 }
 
-                Spacer()
+                Spacer(minLength: 2)
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showSlidersDrawer.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: showSlidersDrawer ? "chevron.down" : "slider.horizontal.3")
+                        Text("Thông số").lineLimit(1)
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .fixedSize()
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 6)
+                    .background(showSlidersDrawer ? themeAccent : Color.black.opacity(0.68))
+                    .foregroundColor(showSlidersDrawer ? .black : .white)
+                    .clipShape(Capsule())
+                }
 
                 Button {
                     dimScreenSaver = true
                 } label: {
                     Image(systemName: "moon.zzz.fill")
-                        .font(.system(size: 13))
-                        .padding(7)
-                        .background(Color.black.opacity(0.72))
+                        .font(.system(size: 12))
+                        .padding(6)
+                        .background(Color.black.opacity(0.68))
                         .foregroundColor(themeAccent)
                         .clipShape(Circle())
                 }
             }
 
-            // Control Deck Panel
+            // Main Compact/Expandable Control Card
             VStack(spacing: 6) {
-                Picker("Chế độ", selection: $camera.captureMode) {
-                    ForEach(CapturePipelineMode.allCases) { m in
-                        Text(m.rawValue).tag(m)
+                // Always visible compact summary strip (tap to expand sliders!)
+                if !showSlidersDrawer {
+                    HStack(spacing: 10) {
+                        Text(camera.captureMode.rawValue)
+                            .foregroundColor(themeAccent)
+                            .bold()
+                        Text(String(format: "MF %.3f", camera.lensPosition))
+                        Text(String(format: "ISO %.0f", camera.isoValue))
+                        Text(String(format: "%.2fs", camera.exposureSeconds))
+                        Spacer()
+                        Text(camera.captureMode == .metalStack ? "Gộp \(camera.syntheticFrames)" : "\(camera.sequenceCount) RAW")
+                            .foregroundColor(themeAccent)
                     }
-                }
-                .pickerStyle(.segmented)
-                .disabled(camera.isCapturing)
-
-                // MF Fine Focus Slider (0.60 .. 1.00)
-                HStack(spacing: 8) {
-                    Text("MF Nét")
-                        .frame(width: 56, alignment: .leading)
-                    Slider(value: Binding(
-                        get: { Double(camera.lensPosition) },
-                        set: { camera.applyManualFocus(position: Float($0)) }
-                    ), in: 0.60...1.00, step: 0.002)
-                    Text(String(format: "%.3f", camera.lensPosition))
-                        .frame(width: 44, alignment: .trailing)
-                }
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(.white)
-
-                // ISO Slider
-                let minI = Double(camera.currentLens?.minISO ?? 50)
-                let maxI = Double(max(minI + 50, Double(camera.currentLens?.maxISO ?? 3200)))
-                HStack(spacing: 8) {
-                    Text("ISO")
-                        .frame(width: 56, alignment: .leading)
-                    Slider(value: Binding(
-                        get: { Double(camera.isoValue) },
-                        set: {
-                            camera.isoValue = Float($0)
-                            camera.applyExposureSettings()
-                        }
-                    ), in: minI...maxI, step: 10)
-                    Text(String(format: "%.0f", camera.isoValue))
-                        .frame(width: 44, alignment: .trailing)
-                }
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(.white)
-
-                // Sub-Exposure Slider (up to hardware activeFormat.maxExposureDuration)
-                let minE = max(0.05, camera.currentLens?.minExposureSec ?? 0.05)
-                let maxE = max(minE + 0.1, min(30.0, camera.currentLens?.maxExposureSec ?? 1.0))
-                HStack(spacing: 8) {
-                    Text("Phơi/tấm")
-                        .frame(width: 56, alignment: .leading)
-                    Slider(value: Binding(
-                        get: { camera.exposureSeconds },
-                        set: {
-                            camera.exposureSeconds = $0
-                            camera.applyExposureSettings()
-                        }
-                    ), in: minE...maxE, step: 0.05)
-                    Text(String(format: "%.2fs", camera.exposureSeconds))
-                        .frame(width: 44, alignment: .trailing)
-                }
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(.white)
-
-                // Total Frame Count / Metal Stack Time Slider
-                if camera.captureMode == .metalStack {
-                    HStack(spacing: 8) {
-                        Text("Gộp Metal")
-                            .frame(width: 56, alignment: .leading)
-                        Slider(value: Binding(
-                            get: { Double(camera.syntheticFrames) },
-                            set: { camera.syntheticFrames = Int($0) }
-                        ), in: 3...30, step: 1)
-                        Text("\(camera.syntheticFrames) tấm")
-                            .frame(width: 44, alignment: .trailing)
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.9))
+                    .padding(.horizontal, 4)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.2)) { showSlidersDrawer = true }
                     }
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(themeAccent)
                 } else {
-                    HStack(spacing: 8) {
-                        Text("Số RAW")
-                            .frame(width: 56, alignment: .leading)
-                        Slider(value: Binding(
-                            get: { Double(camera.sequenceCount) },
-                            set: { camera.sequenceCount = Int($0) }
-                        ), in: 5...300, step: 5)
-                        Text("\(camera.sequenceCount) tấm")
-                            .frame(width: 44, alignment: .trailing)
-                    }
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(themeAccent)
+                    expandedSlidersSection
                 }
 
                 // Bottom Shutter + Timer + Library Row
@@ -360,19 +336,17 @@ struct MainCameraView: View {
                     Button {
                         showSessionsSheet = true
                     } label: {
-                        ZStack {
-                            if let preview = camera.latestStackedPreview {
-                                Image(uiImage: preview)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 44, height: 44)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                            } else {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.white.opacity(0.14))
-                                    .frame(width: 44, height: 44)
-                                    .overlay(Image(systemName: "photo.stack").foregroundColor(.white))
-                            }
+                        if let preview = camera.latestStackedPreview {
+                            Image(uiImage: preview)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 42, height: 42)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        } else {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.white.opacity(0.14))
+                                .frame(width: 42, height: 42)
+                                .overlay(Image(systemName: "photo.stack").foregroundColor(.white))
                         }
                     }
 
@@ -384,12 +358,11 @@ struct MainCameraView: View {
                             camera.delaySeconds = 3
                         }
                     } label: {
-                        VStack(spacing: 2) {
-                            Image(systemName: "timer")
-                            Text("\(camera.delaySeconds)s")
-                                .font(.system(size: 10, weight: .bold))
+                        VStack(spacing: 1) {
+                            Image(systemName: "timer").font(.system(size: 12))
+                            Text("\(camera.delaySeconds)s").font(.system(size: 10, weight: .bold))
                         }
-                        .frame(width: 44, height: 44)
+                        .frame(width: 42, height: 42)
                         .background(Color.white.opacity(0.12))
                         .foregroundColor(.white)
                         .clipShape(Circle())
@@ -398,7 +371,6 @@ struct MainCameraView: View {
 
                     Spacer()
 
-                    // Big Astro Shutter / Stop Button
                     Button {
                         if camera.isCapturing {
                             camera.cancelCapture()
@@ -409,15 +381,15 @@ struct MainCameraView: View {
                         ZStack {
                             Circle()
                                 .stroke(Color.white, lineWidth: 3)
-                                .frame(width: 66, height: 66)
+                                .frame(width: 62, height: 62)
                             if camera.isCapturing {
                                 RoundedRectangle(cornerRadius: 6)
                                     .fill(Color.red)
-                                    .frame(width: 26, height: 26)
+                                    .frame(width: 24, height: 24)
                             } else {
                                 Circle()
                                     .fill(nightVisionUI ? Color.red : Color.white)
-                                    .frame(width: 54, height: 54)
+                                    .frame(width: 50, height: 50)
                             }
                         }
                     }
@@ -427,20 +399,97 @@ struct MainCameraView: View {
 
                     Toggle(isOn: $camera.saveDNGToPhotos) {
                         VStack(spacing: 1) {
-                            Image(systemName: "square.and.arrow.down")
-                            Text("Ảnh")
-                                .font(.system(size: 9))
+                            Image(systemName: "square.and.arrow.down").font(.system(size: 12))
+                            Text("Ảnh").font(.system(size: 9))
                         }
                     }
                     .toggleStyle(.button)
                     .tint(themeAccent)
-                    .frame(width: 50, height: 44)
+                    .frame(width: 48, height: 42)
                 }
-                .padding(.top, 2)
             }
             .padding(10)
-            .background(Color.black.opacity(0.72))
+            .background(Color.black.opacity(0.68))
             .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+    }
+
+    private var expandedSlidersSection: some View {
+        VStack(spacing: 5) {
+            Picker("Chế độ", selection: $camera.captureMode) {
+                ForEach(CapturePipelineMode.allCases) { m in
+                    Text(m.rawValue).tag(m)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(camera.isCapturing)
+
+            HStack(spacing: 8) {
+                Text("MF Nét").frame(width: 56, alignment: .leading)
+                Slider(value: Binding(
+                    get: { Double(camera.lensPosition) },
+                    set: { camera.applyManualFocus(position: Float($0)) }
+                ), in: 0.60...1.00, step: 0.002)
+                Text(String(format: "%.3f", camera.lensPosition)).frame(width: 46, alignment: .trailing)
+            }
+            .font(.system(size: 11, design: .monospaced))
+            .foregroundColor(.white)
+
+            let minI = Double(camera.currentLens?.minISO ?? 50)
+            let maxI = Double(max(minI + 50, Double(camera.currentLens?.maxISO ?? 3200)))
+            HStack(spacing: 8) {
+                Text("ISO").frame(width: 56, alignment: .leading)
+                Slider(value: Binding(
+                    get: { Double(camera.isoValue) },
+                    set: {
+                        camera.isoValue = Float($0)
+                        camera.applyExposureSettings()
+                    }
+                ), in: minI...maxI, step: 10)
+                Text(String(format: "%.0f", camera.isoValue)).frame(width: 46, alignment: .trailing)
+            }
+            .font(.system(size: 11, design: .monospaced))
+            .foregroundColor(.white)
+
+            let minE = max(0.05, camera.currentLens?.minExposureSec ?? 0.05)
+            let maxE = max(minE + 0.1, min(30.0, camera.currentLens?.maxExposureSec ?? 1.0))
+            HStack(spacing: 8) {
+                Text("Phơi/tấm").frame(width: 56, alignment: .leading)
+                Slider(value: Binding(
+                    get: { camera.exposureSeconds },
+                    set: {
+                        camera.exposureSeconds = $0
+                        camera.applyExposureSettings()
+                    }
+                ), in: minE...maxE, step: 0.05)
+                Text(String(format: "%.2fs", camera.exposureSeconds)).frame(width: 46, alignment: .trailing)
+            }
+            .font(.system(size: 11, design: .monospaced))
+            .foregroundColor(.white)
+
+            if camera.captureMode == .metalStack {
+                HStack(spacing: 8) {
+                    Text("Gộp Metal").frame(width: 56, alignment: .leading)
+                    Slider(value: Binding(
+                        get: { Double(camera.syntheticFrames) },
+                        set: { camera.syntheticFrames = Int($0) }
+                    ), in: 3...30, step: 1)
+                    Text("\(camera.syntheticFrames) tấm").frame(width: 46, alignment: .trailing)
+                }
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(themeAccent)
+            } else {
+                HStack(spacing: 8) {
+                    Text("Số RAW").frame(width: 56, alignment: .leading)
+                    Slider(value: Binding(
+                        get: { Double(camera.sequenceCount) },
+                        set: { camera.sequenceCount = Int($0) }
+                    ), in: 5...300, step: 5)
+                    Text("\(camera.sequenceCount) tấm").frame(width: 46, alignment: .trailing)
+                }
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(themeAccent)
+            }
         }
     }
 }
@@ -456,15 +505,14 @@ struct LayerToggleButton: View {
             isOn.toggle()
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 10))
-                Text(title)
-                    .font(.system(size: 11, weight: .semibold))
+                Image(systemName: icon).font(.system(size: 10))
+                Text(title).font(.system(size: 11, weight: .semibold)).lineLimit(1)
             }
+            .fixedSize()
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
-            .background(isOn ? accent.opacity(0.92) : Color.black.opacity(0.65))
-            .foregroundColor(isOn ? .black : .white.opacity(0.75))
+            .background(isOn ? accent.opacity(0.92) : Color.black.opacity(0.62))
+            .foregroundColor(isOn ? .black : .white.opacity(0.8))
             .overlay(Capsule().stroke(isOn ? accent : Color.white.opacity(0.25), lineWidth: 1))
             .clipShape(Capsule())
         }
