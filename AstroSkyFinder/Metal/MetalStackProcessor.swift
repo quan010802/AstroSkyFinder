@@ -328,7 +328,7 @@ final class MetalStackProcessor: NSObject, MTKViewDelegate {
 
                 guard let dstA = accA, let dstB = accB else { return }
                 let frameDesc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba16Float, width: width, height: height, mipmapped: false)
-                frameDesc.usage = [.shaderRead, .renderTarget]
+                frameDesc.usage = [.shaderRead, .shaderWrite, .renderTarget]
                 guard let frameTex = device.makeTexture(descriptor: frameDesc),
                       let cmdBuf = commandQueue.makeCommandBuffer() else { return }
 

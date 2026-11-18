@@ -57,15 +57,16 @@ struct MainCameraView: View {
             )
             .ignoresSafeArea()
 
-            // 3. Full Pro Astro HUD
+            // 3. Full Pro Astro HUD (strictly bounded to screen width so zero pill overflows!)
             VStack(spacing: 8) {
                 topStatusAndARToggleDeck
                 Spacer()
                 bottomCameraControlDeck
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 6)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 10)
+            .padding(.top, 4)
+            .padding(.bottom, 6)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             // 4. Ultra-dim Screen Saver Lock while shooting 60–300 frames on tripod
             if dimScreenSaver {
@@ -100,7 +101,7 @@ struct MainCameraView: View {
             // Compact Single-Line Telemetry + Lens + Target + Calibrate Row
             HStack(spacing: 5) {
                 if let lens = camera.currentLens {
-                    Text(String(format: "f/%.1f · %.0fmm", lens.aperture, lens.eqFocalMm))
+                    Text(String(format: "f/%.1f", lens.aperture))
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .lineLimit(1)
                         .fixedSize()

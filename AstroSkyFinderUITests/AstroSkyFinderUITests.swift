@@ -47,7 +47,12 @@ final class AstroSkyFinderUITests: XCTestCase {
             slidersBtn.tap()
         }
 
-        // 5. Switch to Night Vision Red UI
+        // 5. Scroll top AR layer bar left to expose Night Vision Red UI button & tap it
+        let layerBar = app.scrollViews.firstMatch
+        if layerBar.waitForExistence(timeout: 2) {
+            layerBar.swipeLeft()
+            sleep(1)
+        }
         let redBtn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Đêm đỏ'")).firstMatch
         if redBtn.waitForExistence(timeout: 3) {
             redBtn.tap()
