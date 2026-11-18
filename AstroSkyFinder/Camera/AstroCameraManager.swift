@@ -554,9 +554,7 @@ final class AstroCameraManager: NSObject, ObservableObject, AVCaptureVideoDataOu
             }
 
             let settings = AVCapturePhotoSettings(rawPixelFormatType: rawFmt, processedFormat: nil)
-            if settings.isAutoStillImageStabilizationSupported {
-                settings.isAutoStillImageStabilizationEnabled = false
-            }
+            settings.photoQualityPrioritization = .speed
             if let conn = self.photoOutput.connection(with: .video),
                let angle = self.rotationCoordinator?.videoRotationAngleForHorizonLevelCapture,
                conn.isVideoRotationAngleSupported(angle) {

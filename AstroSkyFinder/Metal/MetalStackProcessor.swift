@@ -1,6 +1,7 @@
 import Foundation
 import Metal
 import MetalKit
+import CoreMedia
 import CoreImage
 import CoreVideo
 import Accelerate
