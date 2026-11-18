@@ -1,0 +1,113 @@
+name: Build & Test iOS App (IPA + Simulator + Screenshots)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-and-verify:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          if [ -d /Applications/Xcode.app ]; then
+            sudo xcode-select -s /Applications/Xcode.app
+          fi
+          xcodebuild -version
+
+      - name: Install XcodeGen & generate project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build unsigned Device IPA (for Sideloadly / AltStore)
+        run: |
+          xcodebuild clean build \
+            -project AstroSkyFinder.xcodeproj \
+            -scheme AstroSkyFinder \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -configuration Release \
+            -derivedDataPath build_ios \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+          APP_PATH=$(find build_ios -name "AstroSkyFinder.app" -type d | grep "Build/Products/Release-iphoneos" | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: AstroSkyFinder.app (iphoneos) not found!"
+            exit 1
+          fi
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r AstroSkyFinder-unsigned.ipa Payload
+          rm -rf Payload
+
+      - name: Upload unsigned IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AstroSkyFinder-unsigned-ipa
+          path: AstroSkyFinder-unsigned.ipa
+          retention-days: 30
+
+      - name: Build Simulator App ZIP (for Appetize.io free browser testing)
+        run: |
+          xcodebuild build \
+            -project AstroSkyFinder.xcodeproj \
+            -scheme AstroSkyFinder \
+            -sdk iphonesimulator \
+            -configuration Release \
+            -derivedDataPath build_sim
+
+          SIM_APP=$(find build_sim -name "AstroSkyFinder.app" -type d | grep "Build/Products/Release-iphonesimulator" | head -n 1)
+          if [ -z "$SIM_APP" ]; then
+            echo "Error: AstroSkyFinder.app (iphonesimulator) not found!"
+            exit 1
+          fi
+          (cd "$(dirname "$SIM_APP")" && zip -r "$GITHUB_WORKSPACE/AstroSkyFinder-Simulator.app.zip" "AstroSkyFinder.app")
+
+      - name: Upload Simulator App ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AstroSkyFinder-Simulator-App
+          path: AstroSkyFinder-Simulator.app.zip
+          retention-days: 30
+
+      - name: Run Unit & UI Tests on iOS Simulator + Export Screenshots
+        run: |
+          set -o pipefail
+          SIM_ID=$(xcrun simctl list devices available iPhone | grep -E "iPhone (16|15|17)" | head -n 1 | grep -oE "[A-F0-9-]{36}")
+          if [ -z "$SIM_ID" ]; then
+            SIM_ID=$(xcrun simctl list devices available iPhone | grep -oE "[A-F0-9-]{36}" | head -n 1)
+          fi
+          echo "Using Simulator ID: $SIM_ID"
+          xcrun simctl boot "$SIM_ID" || true
+
+          xcodebuild test \
+            -project AstroSkyFinder.xcodeproj \
+            -scheme AstroSkyFinder \
+            -destination "id=$SIM_ID" \
+            -resultBundlePath TestResults.xcresult
+
+      - name: Export Test Screenshots
+        if: always()
+        run: |
+          mkdir -p simulator_screenshots
+          if [ -d TestResults.xcresult ]; then
+            xcrun xcresulttool export attachments \
+              --path TestResults.xcresult \
+              --output-path ./simulator_screenshots || true
+          fi
+
+      - name: Upload Simulator Screenshots Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulator-test-screenshots
+          path: simulator_screenshots/
+          retention-days: 30
